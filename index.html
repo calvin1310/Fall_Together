@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fall-Together – course de plateforme en pixel art pour un ou deux joueurs</title>
+<meta name="description" content="Fall-Together est un jeu de plateforme 2D en pixel art : courez, sautez, roulez jusqu'à la ligne d'arrivée, seul ou à deux sur le même écran. Téléchargement pour Windows.">
+<meta property="og:title" content="Fall-Together">
+<meta property="og:description" content="Courez, sautez, roulez jusqu'à la ligne d'arrivée. Seul ou à deux sur le même écran.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="images/fall-together.png">
+<meta name="theme-color" content="#1498DC">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%231498DC'/%3E%3Crect x='1' y='6' width='14' height='9' fill='%23B66B3A'/%3E%3Crect x='1' y='5' width='14' height='3' fill='%234DBD27'/%3E%3Crect x='1' y='5' width='14' height='1' fill='%2395D836'/%3E%3C/svg%3E">
+<script>document.documentElement.classList.add('js')</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;700&family=Pixelify+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* Palette prélevée directement sur une capture du jeu */
+:root{
+  --sky:#1498DC;        /* ciel */
+  --water:#1950C0;      /* eau */
+  --dirt:#B66B3A;       /* terre */
+  --dirt-lt:#D89E58;    /* terre claire */
+  --dirt-dk:#67332D;    /* terre sombre */
+  --ink:#231C19;        /* contours */
+  --grass:#4DBD27;
+  --grass-lt:#95D836;
+  --grass-dk:#03991F;
+  --stone:#636B85;
+  --stone-dk:#3D4857;
+  --stone-lt:#AEB4CE;
+  --orange:#F99C0B;
+  --cyan:#10D3C3;
+  --go:#33FF4D;
+  --coral:#FF5A6E;
+
+  --pixel:'Pixelify Sans','Courier New',ui-monospace,monospace;
+  --body:'Figtree','Segoe UI',system-ui,-apple-system,sans-serif;
+  --wrap:min(1140px,90vw);
+  --header-h:68px;
+  --outline:3px 0 0 var(--ink),-3px 0 0 var(--ink),0 3px 0 var(--ink),0 -3px 0 var(--ink),3px 3px 0 var(--ink),-3px -3px 0 var(--ink),3px -3px 0 var(--ink),-3px 3px 0 var(--ink);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:var(--header-h)}
+body{
+  margin:0;background:var(--sky);color:var(--ink);
+  font-family:var(--body);font-size:1.0625rem;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+body.locked{overflow:hidden}
+img{max-width:100%;display:block}
+a{color:inherit}
+h1,h2,h3{font-family:var(--pixel);margin:0;text-wrap:balance;font-weight:700}
+h2{font-size:clamp(2rem,4.6vw,3.3rem);line-height:1.05}
+p{margin:0 0 1rem;max-width:62ch;text-wrap:pretty}
+:focus-visible{outline:4px solid var(--ink);outline-offset:3px;box-shadow:0 0 0 7px #fff}
+section{padding-block:clamp(4rem,9vw,7.5rem)}
+.wrap{width:var(--wrap);margin-inline:auto}
+
+/* Textes clairs sur fond sombre */
+.dirt,.stone,.water{color:#fff}
+.dirt :focus-visible,.stone :focus-visible,.water :focus-visible,.site-header :focus-visible{outline-color:var(--orange);box-shadow:none}
+
+/* ---------- Texture : terre / pierre / eau (pixels nets) ---------- */
+.dirt{
+  background:var(--dirt-dk) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' shape-rendering='crispEdges'%3E%3Crect x='8' y='10' width='8' height='8' fill='%23864646'/%3E%3Crect x='40' y='6' width='8' height='4' fill='%23864646'/%3E%3Crect x='24' y='34' width='12' height='8' fill='%23864646'/%3E%3Crect x='50' y='44' width='8' height='8' fill='%23864646'/%3E%3Crect x='6' y='50' width='8' height='4' fill='%235A2B26'/%3E%3Crect x='44' y='24' width='4' height='8' fill='%235A2B26'/%3E%3C/svg%3E");
+  background-size:auto;
+}
+.stone{
+  background:var(--stone-dk) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' shape-rendering='crispEdges'%3E%3Crect x='10' y='12' width='12' height='8' fill='%23485366'/%3E%3Crect x='50' y='8' width='8' height='8' fill='%23485366'/%3E%3Crect x='30' y='44' width='14' height='8' fill='%23485366'/%3E%3Crect x='62' y='58' width='8' height='8' fill='%23485366'/%3E%3Crect x='8' y='62' width='8' height='4' fill='%23343E4C'/%3E%3C/svg%3E");
+  border-top:6px solid var(--ink);
+}
+.water{
+  background:var(--water) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' shape-rendering='crispEdges'%3E%3Crect x='12' y='16' width='12' height='4' fill='%232A63D6'/%3E%3Crect x='60' y='40' width='16' height='4' fill='%232A63D6'/%3E%3Crect x='28' y='72' width='12' height='4' fill='%232A63D6'/%3E%3C/svg%3E");
+}
+
+/* ---------- Boutons, touches et panneaux : l'interface du jeu ---------- */
+.btn{
+  display:inline-block;text-decoration:none;cursor:pointer;
+  font-family:var(--pixel);font-weight:700;font-size:1.15rem;line-height:1.1;
+  padding:.95rem 1.5rem;border:4px solid var(--ink);border-radius:0;
+  background:var(--orange);color:var(--ink);
+  box-shadow:inset 0 4px 0 rgba(255,255,255,.4),0 6px 0 var(--ink);
+  transition:transform .06s steps(2),box-shadow .06s steps(2);
+}
+.btn:hover{background:#FFAE2E}
+.btn:active{transform:translateY(5px);box-shadow:inset 0 4px 0 rgba(255,255,255,.4),0 1px 0 var(--ink)}
+.btn.alt{background:#fff}
+.btn.alt:hover{background:#EAF6FF}
+.btn.small{padding:.5rem .9rem;font-size:1rem;border-width:3px;box-shadow:inset 0 3px 0 rgba(255,255,255,.4),0 4px 0 var(--ink)}
+.btn.small:active{transform:translateY(3px);box-shadow:inset 0 3px 0 rgba(255,255,255,.4),0 1px 0 var(--ink)}
+.key{
+  display:inline-block;min-width:2.4em;text-align:center;
+  font-family:var(--pixel);font-weight:700;font-size:1rem;line-height:1;
+  padding:.6em .75em;border-radius:0;
+  background:#fff;color:var(--ink);
+  border:3px solid var(--ink);border-bottom-width:7px;
+}
+.panel{
+  background:#fff;color:var(--ink);
+  border:4px solid var(--ink);box-shadow:8px 8px 0 var(--ink);
+  padding:clamp(1.2rem,3vw,2rem);
+}
+
+/* ---------- En-tête et chrono (façon HUD) ---------- */
+.site-header{
+  position:fixed;inset:0 0 auto 0;height:var(--header-h);z-index:50;
+  background:var(--ink);color:#fff;border-bottom:6px solid var(--grass);
+}
+.site-header .wrap{height:100%;display:flex;align-items:center;gap:1.4rem}
+.brand{
+  display:flex;align-items:center;gap:.7rem;margin-right:auto;
+  font-family:var(--pixel);font-weight:700;font-size:1.35rem;text-decoration:none;white-space:nowrap;
+}
+.brand::before{
+  content:"";width:22px;height:22px;flex:none;
+  background:linear-gradient(var(--grass-lt) 0 4px,var(--grass) 4px 8px,var(--dirt) 8px);
+  border:2px solid #fff;
+}
+.nav{display:flex;gap:1.4rem;font-weight:500;font-size:.98rem}
+.nav a{text-decoration:none;padding:.3rem 0;border-bottom:3px solid transparent}
+.nav a:hover{border-bottom-color:var(--orange)}
+.chrono{
+  font-family:var(--pixel);font-weight:700;font-size:1.25rem;line-height:1;
+  background:#000;color:#fff;border:3px solid var(--orange);
+  padding:.4rem .6rem;white-space:nowrap;display:inline-flex;
+}
+.chrono .d{display:inline-block;width:.62em;text-align:center}
+.chrono .s{display:inline-block;width:.36em;text-align:center}
+.chrono.done{border-color:var(--go);color:var(--go)}
+@media (max-width:820px){.nav{display:none}}
+@media (max-width:480px){.brand{font-size:1.1rem}.site-header .wrap{gap:.7rem}.btn.small{display:none}}
+
+/* ---------- Compte à rebours d'entrée (3, 2, 1, GO! comme en jeu) ---------- */
+#countdown{
+  display:none;position:fixed;inset:0;z-index:100;
+  background:var(--sky);place-items:center;
+  transition:opacity .3s steps(4);cursor:pointer;
+}
+.js #countdown{display:grid}
+#countdown.out{opacity:0;pointer-events:none}
+#countdown b{
+  font-family:var(--pixel);font-weight:700;line-height:1;color:#fff;
+  font-size:clamp(8rem,34vw,22rem);
+  text-shadow:6px 0 0 var(--ink),-6px 0 0 var(--ink),0 6px 0 var(--ink),0 -6px 0 var(--ink),6px 6px 0 var(--ink),-6px -6px 0 var(--ink),6px -6px 0 var(--ink),-6px 6px 0 var(--ink),0 14px 0 var(--ink);
+  animation:pop .3s ease-out both;
+}
+#countdown b.go{color:var(--go)}
+#countdown small{
+  position:absolute;bottom:2rem;left:0;right:0;text-align:center;
+  font-size:1rem;font-weight:700;color:#fff;text-shadow:0 2px 0 var(--ink);
+}
+@keyframes pop{from{transform:scale(1.4)}to{transform:scale(1)}}
+
+/* ---------- Hero : le ciel du niveau ---------- */
+.hero{
+  background:var(--sky);color:#fff;
+  padding-top:calc(var(--header-h) + clamp(3rem,7vw,5.5rem));
+  padding-bottom:0;
+}
+.hero h1{
+  font-size:clamp(3rem,10.5vw,9rem);line-height:.95;letter-spacing:-.01em;
+  color:#fff;margin-bottom:1.6rem;text-wrap:nowrap;
+  text-shadow:6px 0 0 var(--ink),-6px 0 0 var(--ink),0 6px 0 var(--ink),0 -6px 0 var(--ink),6px 6px 0 var(--ink),-6px -6px 0 var(--ink),6px -6px 0 var(--ink),-6px 6px 0 var(--ink),0 14px 0 var(--ink);
+}
+.hero .lead{
+  font-size:clamp(1.15rem,2.2vw,1.5rem);font-weight:700;max-width:34ch;margin-bottom:2.2rem;
+  text-shadow:0 2px 0 var(--ink),2px 0 0 var(--ink),-2px 0 0 var(--ink),0 -2px 0 var(--ink);
+}
+.hero .actions{display:flex;flex-wrap:wrap;gap:1.2rem}
+.hero .fine{
+  margin:1.9rem 0 0;font-size:1rem;font-weight:700;max-width:52ch;
+  text-shadow:0 2px 0 var(--ink);
+}
+.banner{margin-top:clamp(2.5rem,6vw,4.5rem);border-bottom:6px solid var(--ink)}
+.banner img{
+  width:100%;height:clamp(200px,34vw,560px);object-fit:cover;object-position:center;
+  image-rendering:pixelated;
+}
+
+/* ---------- Le jeu (ciel) ---------- */
+#jeu{background:var(--sky)}
+.jeu-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:clamp(2rem,6vw,4.5rem);align-items:start}
+.jeu-head{position:sticky;top:calc(var(--header-h) + 2rem)}
+.jeu-head h2{color:#fff;text-shadow:var(--outline),0 8px 0 var(--ink);margin-bottom:1.6rem}
+.jeu-head p{font-weight:500;color:var(--ink)}
+.feats{margin:0}
+.feats div{padding:1.3rem 0;border-top:3px dashed rgba(35,28,25,.35)}
+.feats div:first-child{border-top:0;padding-top:0}
+.feats div:last-child{padding-bottom:0}
+.feats dt{font-family:var(--pixel);font-weight:700;font-size:1.35rem;margin-bottom:.3rem}
+.feats dd{margin:0;max-width:52ch}
+@media (max-width:820px){
+  .jeu-grid{grid-template-columns:1fr}
+  .jeu-head{position:static}
+}
+
+/* ---------- Captures supplémentaires (visibles seulement si les fichiers existent) ---------- */
+#captures{background:var(--sky);padding-top:0}
+#captures[hidden]{display:none}
+#captures h2{color:#fff;text-shadow:var(--outline),0 8px 0 var(--ink)}
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.4rem;margin-top:2rem}
+.shots img{width:100%;height:auto;border:4px solid var(--ink);box-shadow:6px 6px 0 var(--ink);image-rendering:pixelated}
+
+/* ---------- Bord d'herbe entre le ciel et la terre ---------- */
+.grass-top{position:relative;border-top:6px solid var(--ink);padding-top:calc(clamp(4rem,9vw,7.5rem) + 28px)}
+.grass-top::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:28px;pointer-events:none;
+  background:
+    linear-gradient(var(--grass-lt),var(--grass-lt)) 0 0/100% 4px no-repeat,
+    linear-gradient(var(--grass),var(--grass)) 0 4px/100% 12px no-repeat,
+    repeating-linear-gradient(90deg,var(--grass) 0 16px,transparent 16px 48px) 0 16px/100% 8px no-repeat,
+    repeating-linear-gradient(90deg,var(--grass-dk) 0 8px,transparent 8px 48px) 16px 24px/100% 4px no-repeat;
+}
+
+/* ---------- Caméra à deux ---------- */
+.cam-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:clamp(2rem,5vw,4rem);align-items:center}
+.cam-grid h2{margin-bottom:1.3rem}
+.cam-grid p{color:#F6E4C8}
+.stage{
+  position:relative;height:clamp(300px,42vw,420px);overflow:hidden;
+  border:4px solid var(--ink);box-shadow:8px 8px 0 var(--ink);
+  background:var(--sky);touch-action:none;user-select:none;
+}
+.plat{position:absolute;border:3px solid var(--ink);background:linear-gradient(var(--grass-lt) 0 4px,var(--grass) 4px 12px,var(--dirt) 12px);pointer-events:none}
+.plat.a{left:6%;bottom:18%;width:26%;height:56px}
+.plat.b{left:58%;bottom:52%;width:22%;height:44px}
+.plat.c{left:36%;bottom:-10px;width:30%;height:60px}
+.cam{position:absolute;border:4px dashed #fff;pointer-events:none;box-shadow:0 0 0 2px var(--ink)}
+.cam span{position:absolute;top:.3rem;left:.5rem;font-family:var(--pixel);font-weight:700;font-size:1rem;color:#fff;text-shadow:0 2px 0 var(--ink)}
+.mid{position:absolute;width:16px;height:16px;pointer-events:none;transform:translate(-50%,-50%)}
+.mid::before,.mid::after{content:"";position:absolute;background:#fff;box-shadow:0 0 0 2px var(--ink)}
+.mid::before{left:6px;top:0;width:4px;height:16px}
+.mid::after{top:6px;left:0;height:4px;width:16px}
+.dot{
+  position:absolute;width:42px;height:42px;border-radius:0;
+  border:4px solid var(--ink);padding:0;cursor:grab;transform:translate(-50%,-50%);
+  box-shadow:inset 0 4px 0 rgba(255,255,255,.4),0 4px 0 var(--ink);
+}
+.dot:active{cursor:grabbing}
+.dot.p1{background:var(--cyan)}
+.dot.p2{background:var(--coral)}
+.dot span{font-family:var(--pixel);font-weight:700;font-size:1.1rem;color:var(--ink);line-height:1}
+.readout{margin-top:1rem;font-size:1rem}
+.readout b{font-family:var(--pixel);font-size:1.3rem;color:var(--orange)}
+@media (max-width:820px){.cam-grid{grid-template-columns:1fr}}
+
+/* ---------- Médailles (pierre) ---------- */
+.medals h2{margin-bottom:1.2rem}
+.medals p{color:#E7EAF5}
+.scale{display:flex;margin-top:3rem;height:80px;border:4px solid var(--ink);box-shadow:8px 8px 0 var(--ink)}
+.scale div{
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--pixel);font-weight:700;font-size:clamp(.95rem,2.2vw,1.6rem);
+  padding-inline:.4rem;text-align:center;color:var(--ink);
+}
+.scale div + div{border-left:4px solid var(--ink)}
+.m-or{flex:30;background:var(--orange)}
+.m-ar{flex:30;background:var(--stone-lt)}
+.m-br{flex:60;background:var(--dirt);color:#fff}
+.m-tr{flex:40;background:var(--cyan)}
+.ticks{position:relative;height:1.8rem;margin-top:1rem;font-family:var(--pixel);font-weight:700;font-size:1.1rem}
+.ticks span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+.ticks .t0{left:0;transform:none}
+.ticks .t1{left:18.75%}
+.ticks .t2{left:37.5%}
+.ticks .t3{left:75%}
+.medals .note{margin-top:2rem}
+
+/* ---------- Commandes (terre claire) ---------- */
+.controls{background:var(--dirt-lt);color:var(--ink);border-top:6px solid var(--ink)}
+.controls p{color:var(--ink);font-weight:500}
+.controls-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:clamp(2rem,5vw,4rem);align-items:start}
+.controls h2{margin-bottom:1.2rem}
+.cmd{margin:0;padding:0;list-style:none}
+.cmd li{
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:1.1rem 0;border-top:3px dashed rgba(35,28,25,.4);
+}
+.cmd li:first-child{border-top:0;padding-top:0}
+.cmd .what{font-family:var(--pixel);font-weight:700;font-size:1.3rem;line-height:1.2}
+.cmd .what small{display:block;font-family:var(--body);font-weight:500;font-size:.95rem}
+@media (max-width:820px){.controls-grid{grid-template-columns:1fr}}
+
+/* ---------- Arrivée : ligne à damier puis eau ---------- */
+.finish{position:relative;padding-top:calc(clamp(4rem,9vw,7.5rem) + 32px);border-top:6px solid var(--ink)}
+.finish::before{
+  content:"";position:absolute;inset:0 0 auto 0;height:32px;
+  background:repeating-conic-gradient(#fff 0 25%,var(--ink) 0 50%) 0 0/32px 32px;
+  border-bottom:4px solid var(--ink);
+}
+.finish h2{margin-bottom:1.2rem}
+.finish p{color:#EAF1FF}
+.finish-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(2rem,5vw,4.5rem);align-items:start}
+.result{
+  margin:0 0 2rem;padding:1rem 1.2rem;max-width:46ch;
+  background:var(--ink);border:4px solid var(--go);color:#fff;
+}
+.result[hidden]{display:none}
+.result b{font-family:var(--pixel);font-size:1.25rem;color:var(--go)}
+.result button{
+  margin-top:.6rem;background:none;border:0;padding:0;cursor:pointer;
+  color:var(--orange);font:inherit;font-weight:700;text-decoration:underline;
+}
+.dl{font-size:1.5rem;padding:1.2rem 1.8rem}
+.dl-meta{margin-top:1.6rem;font-size:1rem}
+.steps{margin:0 0 1.8rem;padding:0;list-style:none;counter-reset:s}
+.steps li{counter-increment:s;position:relative;padding:0 0 1.5rem 3.6rem}
+.steps li::before{
+  content:counter(s);position:absolute;left:0;top:0;
+  width:2.5rem;height:2.5rem;background:var(--orange);color:var(--ink);
+  border:3px solid var(--ink);box-shadow:0 4px 0 var(--ink);
+  font-family:var(--pixel);font-weight:700;font-size:1.3rem;
+  display:grid;place-items:center;
+}
+.steps strong{display:block;font-family:var(--pixel);font-weight:700;font-size:1.3rem;margin-bottom:.1rem}
+.steps span{color:#EAF1FF}
+.warn{
+  margin:0;padding:1rem 1.2rem;border-left:6px solid var(--orange);
+  background:rgba(0,0,0,.28);font-size:.98rem;color:#fff;
+}
+@media (max-width:820px){.finish-grid{grid-template-columns:1fr}}
+
+/* ---------- Pied de page ---------- */
+footer{background:var(--ink);color:#D8D2CE;padding-block:2rem;font-size:.98rem;border-top:6px solid var(--grass)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:1rem 2rem;justify-content:space-between;align-items:center}
+footer a{color:#fff}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{animation:none !important;transition:none !important}
+}
+</style>
+</head>
+
+<body>
+
+<!-- Compte à rebours d'entrée : identique au départ d'une partie. Cliquer ou appuyer sur une touche pour passer. -->
+<div id="countdown" role="presentation" aria-hidden="true">
+  <b>3</b>
+  <small>Cliquez ou appuyez sur une touche pour passer</small>
+</div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="#haut">Fall-Together</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#jeu">Le jeu</a>
+      <a href="#camera">Caméra</a>
+      <a href="#medailles">Médailles</a>
+      <a href="#commandes">Commandes</a>
+    </nav>
+    <div class="chrono" id="chrono" role="timer" aria-label="Chrono de la page : le temps que vous mettez à atteindre la ligne d'arrivée">00:00.00</div>
+    <a class="btn small" href="#arrivee">Télécharger</a>
+  </div>
+</header>
+
+<main id="haut">
+
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="wrap">
+      <h1>Fall-Together</h1>
+      <p class="lead">Courez, sautez, roulez jusqu'à la ligne d'arrivée. Seul ou à deux sur le même écran.</p>
+      <div class="actions">
+        <a class="btn" href="#arrivee">Télécharger pour Windows</a>
+        <a class="btn alt" href="#jeu">Découvrir le jeu</a>
+      </div>
+      <p class="fine">Un jeu de plateforme 2D en pixel art. Le chrono en haut de la page tourne déjà : à vous de voir en combien de temps vous arrivez en bas.</p>
+    </div>
+
+    <div class="banner">
+      <img src="images/fall-together.png" width="1339" height="448" alt="Vue d'ensemble d'un niveau de Fall-Together : des îles flottantes couvertes d'herbe entre deux grandes parois de terre, avec de l'eau tout en bas.">
+    </div>
+  </section>
+
+  <!-- ================= LE JEU ================= -->
+  <section id="jeu">
+    <div class="wrap jeu-grid">
+      <div class="jeu-head">
+        <h2>Un platformer qui se joue au millimètre</h2>
+        <p>Des îles flottantes, des parois de terre et de pierre, de l'eau tout en bas : un niveau à traverser d'un bord à l'autre.</p>
+        <p>Fall-Together est une course : le premier qui franchit la ligne d'arrivée gagne, et le chrono ne pardonne pas.</p>
+      </div>
+
+      <div class="panel">
+        <dl class="feats">
+          <div>
+            <dt>Un saut que vous dosez</dt>
+            <dd>Restez appuyé pour sauter haut, relâchez tôt pour un saut court. En l'air, un deuxième saut vous laisse une chance de vous rattraper.</dd>
+          </div>
+          <div>
+            <dt>La roulade</dt>
+            <dd>Un élan rapide, au sol comme en l'air. En l'air, une seule roulade par saut : utilisez-la au bon moment pour atteindre la plateforme d'en face.</dd>
+          </div>
+          <div>
+            <dt>Des chutes qui pèsent</dt>
+            <dd>On tombe plus vite qu'on ne monte, dans l'esprit de Getting Over It. Un saut raté se voit tout de suite.</dd>
+          </div>
+          <div>
+            <dt>Des commandes qui pardonnent</dt>
+            <dd>Vous pouvez encore sauter un court instant après avoir quitté le bord d'une plateforme. Un saut demandé un peu trop tôt part quand même à l'atterrissage.</dd>
+          </div>
+          <div>
+            <dt>Chrono au centième et record</dt>
+            <dd>Chaque course est chronométrée. Votre meilleur temps est enregistré sur votre ordinateur et affiché à chaque départ.</dd>
+          </div>
+          <div>
+            <dt>Départ 3, 2, 1 et pause</dt>
+            <dd>Un compte à rebours lance la course pour tout le monde en même temps. Échap met la partie en pause à tout moment.</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CAPTURES (visible seulement si images/capture-1.png existe) ================= -->
+  <section id="captures" hidden>
+    <div class="wrap">
+      <h2>Le jeu en images</h2>
+      <div class="shots" id="shots"></div>
+    </div>
+  </section>
+
+  <!-- ================= CAMÉRA (terre) ================= -->
+  <section id="camera" class="dirt grass-top">
+    <div class="wrap cam-grid">
+      <div>
+        <h2>Deux joueurs, une seule caméra</h2>
+        <p>La caméra se place au milieu des deux joueurs et recule quand ils s'éloignent, pour que personne ne sorte de l'écran.</p>
+        <p><strong>Essayez :</strong> déplacez les deux carrés, à la souris, au doigt ou avec les flèches du clavier.</p>
+        <p class="readout">Zoom de la caméra : <b id="zoomv">1.00×</b></p>
+      </div>
+
+      <div class="stage" id="stage">
+        <div class="plat a"></div><div class="plat b"></div><div class="plat c"></div>
+        <div class="cam" id="cam"><span>Caméra</span></div>
+        <div class="mid" id="mid"></div>
+        <button class="dot p1" id="p1" aria-label="Joueur 1. Déplacer avec la souris ou les flèches"><span>1</span></button>
+        <button class="dot p2" id="p2" aria-label="Joueur 2. Déplacer avec la souris ou les flèches"><span>2</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= MÉDAILLES (pierre) ================= -->
+  <section id="medailles" class="stone medals">
+    <div class="wrap">
+      <h2>Votre temps décide de la médaille</h2>
+      <p>À l'arrivée, le jeu affiche votre temps, votre record et une récompense. Voici où se situent les seuils.</p>
+
+      <div class="scale" role="img" aria-label="Or sous 30 secondes, argent sous 60 secondes, bronze sous 2 minutes, trophée au-delà">
+        <div class="m-or">Or</div>
+        <div class="m-ar">Argent</div>
+        <div class="m-br">Bronze</div>
+        <div class="m-tr">Trophée</div>
+      </div>
+      <div class="ticks" aria-hidden="true">
+        <span class="t0">0</span>
+        <span class="t1">30 s</span>
+        <span class="t2">60 s</span>
+        <span class="t3">2 min</span>
+      </div>
+
+      <p class="note">Le record est enregistré sur votre machine. En pause, appuyez sur <span class="key">R</span> pour le remettre à zéro.</p>
+    </div>
+  </section>
+
+  <!-- ================= COMMANDES ================= -->
+  <section id="commandes" class="controls">
+    <div class="wrap controls-grid">
+      <div>
+        <h2>Les commandes</h2>
+        <p>Chaque joueur a ses propres touches pour aller à gauche, aller à droite, sauter et rouler.</p>
+      </div>
+      <ul class="cmd">
+        <!-- Ajoutez ici les touches de vos joueurs, par exemple :
+        <li><span class="what">Joueur 1<small>Gauche, droite, saut, roulade</small></span><span><span class="key">Q</span> <span class="key">D</span> <span class="key">Z</span> <span class="key">E</span></span></li>
+        -->
+        <li><span class="what">Mettre en pause<small>Reprendre avec la même touche</small></span><span class="key">Échap</span></li>
+        <li><span class="what">Remettre le record à zéro<small>Depuis la pause</small></span><span class="key">R</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= ARRIVÉE / TÉLÉCHARGEMENT (eau) ================= -->
+  <section id="arrivee" class="water finish">
+    <div class="wrap finish-grid">
+      <div>
+        <h2>Ligne d'arrivée</h2>
+
+        <div class="result" id="result" hidden aria-live="polite">
+          <span id="result-text"></span><br>
+          <button type="button" id="replay">Refaire la course</button>
+        </div>
+
+        <p>Vous êtes au bout de la page. Le jeu, lui, commence maintenant : téléchargez-le, lancez-le et battez ce temps.</p>
+        <a class="btn dl" href="Fall-Together.zip" download>Télécharger Fall-Together.zip</a>
+        <p class="dl-meta">Pour Windows. Le fichier .zip contient Fall-Together.exe.</p>
+      </div>
+
+      <div>
+        <ol class="steps">
+          <li><strong>Téléchargez le .zip</strong><span>Enregistrez-le où vous voulez, par exemple dans Téléchargements.</span></li>
+          <li><strong>Extrayez le dossier</strong><span>Clic droit sur le .zip, puis Extraire tout. Ne lancez pas le jeu depuis l'intérieur de l'archive.</span></li>
+          <li><strong>Lancez Fall-Together.exe</strong><span>Double-cliquez, attendez le compte à rebours, et courez.</span></li>
+        </ol>
+        <p class="warn">Si Windows affiche « Windows a protégé votre ordinateur », cliquez sur <strong>Informations complémentaires</strong>, puis sur <strong>Exécuter quand même</strong>. Le jeu n'est pas signé numériquement, ce qui déclenche cet avertissement pour les petits jeux indépendants.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Fall-Together, un jeu de plateforme en pixel art créé avec Godot Engine.</span>
+    <a href="#haut">Retour en haut</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+  'use strict';
+  var $ = function(s){return document.querySelector(s)};
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- Chrono de la page (mêmes seuils que le jeu) ---------- */
+  var chrono = $('#chrono'), resultBox = $('#result'), resultText = $('#result-text');
+  var running = false, finished = false, startT = 0, elapsed = 0, raf = 0;
+
+  function fmt(t){
+    var m = Math.floor(t/60), s = Math.floor(t%60), c = Math.floor((t%1)*100);
+    return (m<10?'0':'')+m+':'+(s<10?'0':'')+s+'.'+(c<10?'0':'')+c;
+  }
+  function paint(t){
+    var str = fmt(t), out = '';
+    for (var i=0;i<str.length;i++){
+      var ch = str.charAt(i);
+      out += '<span class="'+(/\d/.test(ch)?'d':'s')+'">'+ch+'</span>';
+    }
+    chrono.innerHTML = out;
+  }
+  function medal(t){
+    if (t < 30)  return 'Or';
+    if (t < 60)  return 'Argent';
+    if (t < 120) return 'Bronze';
+    return 'Trophée';
+  }
+  function loop(now){
+    if (!running) return;
+    elapsed = (now - startT)/1000;
+    paint(elapsed);
+    raf = requestAnimationFrame(loop);
+  }
+  function startRun(){
+    finished = false; running = true; elapsed = 0;
+    chrono.classList.remove('done');
+    resultBox.hidden = true;
+    startT = performance.now();
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(loop);
+  }
+  function finishRun(){
+    if (!running) return;
+    running = false; finished = true;
+    cancelAnimationFrame(raf);
+    paint(elapsed);
+    chrono.classList.add('done');
+    resultText.innerHTML = 'Vous avez atteint l\u2019arrivée en <b>'+fmt(elapsed)+'</b>. Médaille : <b>'+medal(elapsed)+'</b>.';
+    resultBox.hidden = false;
+  }
+  paint(0);
+
+  var arrivee = $('#arrivee');
+  if ('IntersectionObserver' in window){
+    new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if (e.isIntersecting) finishRun(); });
+    }, {threshold:0.35}).observe(arrivee);
+  }
+  $('#replay').addEventListener('click', function(){
+    window.scrollTo({top:0, behavior: reduce ? 'auto' : 'smooth'});
+    setTimeout(startRun, reduce ? 0 : 400);
+  });
+
+  /* ---------- Compte à rebours d'entrée ---------- */
+  var ov = $('#countdown');
+  if (ov && !reduce){
+    var num = ov.querySelector('b'), seq = ['3','2','1','GO!'], i = 0, over = false, timer;
+    document.body.classList.add('locked');
+    var step = function(){
+      if (over) return;
+      if (i >= seq.length){ end(); return; }
+      num.textContent = seq[i];
+      num.classList.toggle('go', i === 3);
+      num.style.animation = 'none'; void num.offsetWidth; num.style.animation = '';
+      timer = setTimeout(step, i < 3 ? 700 : 500);
+      i++;
+    };
+    var end = function(){
+      if (over) return;
+      over = true; clearTimeout(timer);
+      ov.classList.add('out');
+      document.body.classList.remove('locked');
+      setTimeout(function(){ ov.remove(); }, 350);
+      window.removeEventListener('keydown', end);
+      startRun();
+    };
+    ov.addEventListener('click', end);
+    ov.addEventListener('touchstart', end, {passive:true});
+    window.addEventListener('keydown', end);
+    step();
+  } else {
+    if (ov) ov.remove();
+    startRun();
+  }
+
+  /* ---------- Démo caméra à deux joueurs (même logique que camera2d.gd) ---------- */
+  var stage = $('#stage'), cam = $('#cam'), mid = $('#mid'), zoomv = $('#zoomv');
+  var dots = [$('#p1'), $('#p2')];
+  var P = [{x:.32,y:.62},{x:.62,y:.38}];      // positions en fraction de la scène
+  var MARGIN = 60, ASPECT = 16/9, MIN_W = 220;
+  var c = {x:0, y:0, w:400, init:false}, last = performance.now();
+
+  function place(){
+    var r = stage.getBoundingClientRect();
+    dots.forEach(function(d, k){
+      d.style.left = (P[k].x * r.width)  + 'px';
+      d.style.top  = (P[k].y * r.height) + 'px';
+    });
+    return r;
+  }
+  function frame(now){
+    var dt = Math.min((now - last)/1000, .1); last = now;
+    var r = place();
+    var a = {x:P[0].x*r.width, y:P[0].y*r.height}, b = {x:P[1].x*r.width, y:P[1].y*r.height};
+    var tx = (a.x+b.x)/2, ty = (a.y+b.y)/2;
+    var needW = Math.max(Math.abs(a.x-b.x) + MARGIN*2, (Math.abs(a.y-b.y) + MARGIN*2)*ASPECT, MIN_W);
+    if (!c.init){ c.x = tx; c.y = ty; c.w = needW; c.init = true; }
+    var k = Math.min(1, 5*dt);                 // lissage : vitesse 5 comme dans le jeu
+    c.x += (tx - c.x)*k; c.y += (ty - c.y)*k; c.w += (needW - c.w)*k;
+    var h = c.w/ASPECT;
+    cam.style.left = (c.x - c.w/2)+'px'; cam.style.top = (c.y - h/2)+'px';
+    cam.style.width = c.w+'px'; cam.style.height = h+'px';
+    mid.style.left = c.x+'px'; mid.style.top = c.y+'px';
+    var z = Math.max(0.2, Math.min(2.5, 640/c.w));   // bornes 0.2 à 2.5 comme dans le jeu
+    zoomv.textContent = z.toFixed(2)+'×';
+    requestAnimationFrame(frame);
+  }
+  dots.forEach(function(d, k){
+    d.addEventListener('pointerdown', function(e){ d.setPointerCapture(e.pointerId); d.dataset.drag = '1'; e.preventDefault(); });
+    d.addEventListener('pointermove', function(e){
+      if (!d.dataset.drag) return;
+      var r = stage.getBoundingClientRect();
+      P[k].x = Math.max(.04, Math.min(.96, (e.clientX - r.left)/r.width));
+      P[k].y = Math.max(.06, Math.min(.94, (e.clientY - r.top)/r.height));
+    });
+    var up = function(){ delete d.dataset.drag; };
+    d.addEventListener('pointerup', up); d.addEventListener('pointercancel', up);
+    d.addEventListener('keydown', function(e){
+      var s = .04, m = {ArrowLeft:[-s,0], ArrowRight:[s,0], ArrowUp:[0,-s], ArrowDown:[0,s]}[e.key];
+      if (!m) return;
+      e.preventDefault(); e.stopPropagation();
+      P[k].x = Math.max(.04, Math.min(.96, P[k].x + m[0]));
+      P[k].y = Math.max(.06, Math.min(.94, P[k].y + m[1]));
+    });
+  });
+  requestAnimationFrame(function(t){ last = t; frame(t); });
+
+  /* ---------- Captures supplémentaires : images/capture-1.png, capture-2.png… ---------- */
+  var found = [];
+  function renderShots(){
+    var box = $('#shots');
+    found.sort(function(a,b){return a.n-b.n});
+    box.innerHTML = '';
+    found.forEach(function(f){
+      var img = document.createElement('img');
+      img.src = f.src; img.alt = 'Capture d\u2019écran de Fall-Together n°'+f.n; img.loading = 'lazy';
+      box.appendChild(img);
+    });
+    $('#captures').hidden = found.length === 0;
+  }
+  for (var n=1; n<=6; n++){
+    (function(n){
+      var im = new Image(), src = 'images/capture-'+n+'.png';
+      im.onload = function(){ found.push({n:n, src:src}); renderShots(); };
+      im.src = src;
+    })(n);
+  }
+})();
+</script>
+</body>
+</html>
